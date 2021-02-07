@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+<title>Swap on Raspbian - Zane Valley</title>
+
+<meta name="description" content="最近在 Raspberry Pi 上編譯 ARM 版本的 Docker 時遇到的
+gcc: cannot allocate memory 這台樹莓派只有 1G RAM，快絕望的時候突然想到是不是可以朝 Swap 的方向去嘗試，Google 了一下果然有相關的討論。
+dphys-swapfile Raspbian 可以修改 /etc/dphys-swapfile 來控制Swap
+CONF_SWAPSIZE=2000 $ sudo service dphys-swapfile restart Swap的讀寫非常頻繁，容易耗損 SD Card 這類讀寫次數有限的裝置，把 Swap File 放在 External USB Stick 可以避免這問題，但讀寫速度是大缺點。
+CONF_SWAPFILE=/mnt/USB/swap mkswap 另一台沒有dphys-swapfile可以用mkswap
+# Create swap file # 1024 * 512M = 524288 block size dd if=/dev/zero of=/tmp/testswap bs=1024 count=524288 # Adjust permission chown root:root /tmp/testswap chmod 0600 /tmp/testswap # Set up swap area mkswap /tmp/testswap # Enable swap swapon /tmp/testswap # Check swap status swapon -s # Disable swap swapoff 開機自動掛載，在 /etc/fstab 加上">
+<meta name="author" content="">
+<link rel="canonical" href="https://zanetumg.github.io/posts/raspswap/" />
+
+<link href="https://zanetumg.github.io/css/stylesheet.min.a7be9e3b28868ad9d1331f00b5e9c207efbfe37aea15c32d101d76f2901bb918.css" integrity="sha256-p76eOyiGitnRMx8AtenCB&#43;&#43;/43rqFcMtEB128pAbuRg=" rel="preload stylesheet"
+    as="style">
+
+<link rel="apple-touch-icon" href="https://zanetumg.github.io/apple-touch-icon.png">
+<link rel="icon" href="https://zanetumg.github.io/favicon.ico">
+<meta name="generator" content="Hugo 0.80.0" />
+
+</head>
+
+<body class="single" id="top">
+<header class="header">
+    <nav class="nav">
+        <p class="logo"><a href="https://zanetumg.github.io/">Zane Valley</a></p>
+        <ul class="menu" id="menu" onscroll="menu_on_scroll()">
+        </ul>
+    </nav>
+</header>
+    <main class="main">
+
+<article class="post-single">
+  <header class="post-header">
+    <h1 class="post-title">
+      Swap on Raspbian
+    </h1>
+    <div class="post-meta">
+      <time>February 7, 2021</time>
+    </div>
+  </header>
+  <div class="post-content"><p>最近在 Raspberry Pi 上編譯 ARM 版本的 Docker 時遇到的</p>
+<pre><code>gcc: cannot allocate memory
+</code></pre><p>這台樹莓派只有 1G RAM，快絕望的時候突然想到是不是可以朝 Swap 的方向去嘗試，Google 了一下果然有相關的討論。</p>
+<h1 id="dphys-swapfile">dphys-swapfile</h1>
+<p>Raspbian 可以修改 <code>/etc/dphys-swapfile</code> 來控制Swap</p>
+<pre><code>CONF_SWAPSIZE=2000
+</code></pre><pre><code>$ sudo service dphys-swapfile restart
+</code></pre><p>Swap的讀寫非常頻繁，容易耗損 SD Card 這類讀寫次數有限的裝置，把 Swap File 放在 External USB Stick 可以避免這問題，但讀寫速度是大缺點。</p>
+<pre><code>CONF_SWAPFILE=/mnt/USB/swap
+</code></pre><h1 id="mkswap">mkswap</h1>
+<p>另一台沒有dphys-swapfile可以用mkswap</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell"><span style="color:#75715e"># Create swap file</span>
+<span style="color:#75715e"># 1024 * 512M = 524288 block size</span>
+dd <span style="color:#66d9ef">if</span><span style="color:#f92672">=</span>/dev/zero of<span style="color:#f92672">=</span>/tmp/testswap bs<span style="color:#f92672">=</span><span style="color:#ae81ff">1024</span> count<span style="color:#f92672">=</span><span style="color:#ae81ff">524288</span> 
+
+<span style="color:#75715e"># Adjust permission</span>
+chown root:root /tmp/testswap
+chmod <span style="color:#ae81ff">0600</span> /tmp/testswap
+
+<span style="color:#75715e"># Set up swap area</span>
+mkswap /tmp/testswap
+
+<span style="color:#75715e"># Enable swap</span>
+swapon /tmp/testswap
+
+<span style="color:#75715e"># Check swap status</span>
+swapon -s
+
+<span style="color:#75715e"># Disable swap</span>
+swapoff 
+</code></pre></div><p>開機自動掛載，在 <code>/etc/fstab</code> 加上</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">/tmp/testswap none swap sw <span style="color:#ae81ff">0</span> <span style="color:#ae81ff">0</span>
+</code></pre></div><p>網路上看到有些人在Create swap file用的是<code>fallocate</code>，但這其實不對，在SWAPON(8)有說明</p>
+<blockquote>
+<p>Commands like cp(1) or truncate(1)  create  files  with  holes.   These
+files will be rejected by swapon.</p>
+</blockquote>
+<blockquote>
+<p>Preallocated  files created by fallocate(1) may be interpreted as files
+with holes too depending of the filesystem.   Preallocated  swap  files
+are supported on XFS since Linux 4.18.</p>
+</blockquote>
+<blockquote>
+<p>The  most  portable  solution to create a swap file is to use dd(1) and
+/dev/zero.</p>
+</blockquote>
+</div>
+  <footer class="post-footer">
+    <ul class="post-tags">
+      <li><a href="https://zanetumg.github.io/tags/linux">Linux</a></li>
+    </ul>
+  </footer>
+</article>
+    </main><footer class="footer">
+    <span>&copy; 2021 <a href="https://zanetumg.github.io/">Zane Valley</a></span>
+    <span>&middot;</span>
+    <span>Powered by <a href="https://gohugo.io/" rel="noopener noreferrer" target="_blank">Hugo️️</a>️</span>
+    <span>&middot;</span>
+    <span>Theme️ <a href="https://git.io/hugopapermod" rel="noopener" target="_blank">PaperMod</a></span>
+</footer>
+<a href="#top" aria-label="go to top" title="Go to Top">
+    <button class="top-link" id="top-link" type="button">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 6">
+            <path d="M12 6H0l6-6z" /></svg>
+    </button>
+</a>
+<script src="https://zanetumg.github.io/js/highlight.min.min.e7afc2928c0925d65c4732dfebe147014d91299a98e819e4b42f25c4fa68e91c.js" integrity="sha256-56/CkowJJdZcRzLf6&#43;FHAU2RKZqY6BnktC8lxPpo6Rw="></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<script>
+    window.onload = function () {
+        if (localStorage.getItem("menu-scroll-position")) {
+            document.getElementById('menu').scrollLeft = localStorage.getItem("menu-scroll-position");
+        }
+    }
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener("click", function (e) {
+            e.preventDefault();
+
+            document.querySelector(this.getAttribute("href")).scrollIntoView({
+                behavior: "smooth"
+            });
+        });
+    });
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+    function menu_on_scroll() {
+        localStorage.setItem("menu-scroll-position", document.getElementById('menu').scrollLeft);
+    }
+</script>
+</body>
+
+</html>

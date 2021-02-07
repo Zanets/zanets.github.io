@@ -1,18 +1,32 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>Zanets&#39; Valley</title>
-    <link>https://zanets.github.io/</link>
-    <description>Recent content on Zanets&#39; Valley</description>
+    <title>Zane Valley</title>
+    <link>https://zanetumg.github.io/</link>
+    <description>Recent content on Zane Valley</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Sat, 07 Nov 2020 10:03:37 +0800</lastBuildDate><atom:link href="https://zanets.github.io/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Sun, 07 Feb 2021 15:55:12 +0800</lastBuildDate><atom:link href="https://zanetumg.github.io/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Swap on Raspbian</title>
+      <link>https://zanetumg.github.io/posts/raspswap/</link>
+      <pubDate>Sun, 07 Feb 2021 15:55:12 +0800</pubDate>
+      
+      <guid>https://zanetumg.github.io/posts/raspswap/</guid>
+      <description>最近在 Raspberry Pi 上編譯 ARM 版本的 Docker 時遇到的
+gcc: cannot allocate memory 這台樹莓派只有 1G RAM，快絕望的時候突然想到是不是可以朝 Swap 的方向去嘗試，Google 了一下果然有相關的討論。
+dphys-swapfile Raspbian 可以修改 /etc/dphys-swapfile 來控制Swap
+CONF_SWAPSIZE=2000 $ sudo service dphys-swapfile restart Swap的讀寫非常頻繁，容易耗損 SD Card 這類讀寫次數有限的裝置，把 Swap File 放在 External USB Stick 可以避免這問題，但讀寫速度是大缺點。
+CONF_SWAPFILE=/mnt/USB/swap mkswap 另一台沒有dphys-swapfile可以用mkswap
+# Create swap file # 1024 * 512M = 524288 block size dd if=/dev/zero of=/tmp/testswap bs=1024 count=524288 # Adjust permission chown root:root /tmp/testswap chmod 0600 /tmp/testswap # Set up swap area mkswap /tmp/testswap # Enable swap swapon /tmp/testswap # Check swap status swapon -s # Disable swap swapoff 開機自動掛載，在 /etc/fstab 加上</description>
+    </item>
+    
     <item>
       <title>free and null</title>
-      <link>https://zanets.github.io/posts/ifnull/</link>
+      <link>https://zanetumg.github.io/posts/ifnull/</link>
       <pubDate>Sat, 07 Nov 2020 10:03:37 +0800</pubDate>
       
-      <guid>https://zanets.github.io/posts/ifnull/</guid>
+      <guid>https://zanetumg.github.io/posts/ifnull/</guid>
       <description>前幾天同事問了個問題
 FILE* fp = fopen(&amp;quot;xxxxxx&amp;quot;, &amp;quot;w&amp;quot;); // a lot of code and branch fclose(fp); // more code and branch // at the end of function if (fp) fclose(fp); 這段code的作者早已不可考，但每次都會卡在最後的fclose，同事對此感到不能理解。
 我猜測是因為中間的分支太多，作者怕有哪裡沒有fclose，所以在最後做了個檢查。 但這種寫法其實很有問題，fclose 和 free 這類function並不會把pointer指向null， 所以不管有沒有fclose或free，最後的if一定成立，這就導致了double free。
@@ -23,10 +37,10 @@ void myClose(FILE** p) { fclose(*p); *p = NULL; } 這樣就能用if去檢查指�
     
     <item>
       <title>Protect SSH Server using endless</title>
-      <link>https://zanets.github.io/posts/endlessh/</link>
+      <link>https://zanetumg.github.io/posts/endlessh/</link>
       <pubDate>Sun, 25 Oct 2020 22:59:37 +0800</pubDate>
       
-      <guid>https://zanets.github.io/posts/endlessh/</guid>
+      <guid>https://zanetumg.github.io/posts/endlessh/</guid>
       <description>Introduction 最近在樹莓派上跑了一些Service，很快的SSH server就收到了來自世界的問候
 Oct 24 09:51:33 ubuntu sshd[6415]: Failed password for root from 85.209.0.101 port 64104 ssh2 Oct 24 11:22:43 ubuntu sshd[7285]: Failed password for root from 85.209.0.100 port 37064 ssh2 Oct 24 11:58:17 ubuntu sshd[7528]: Failed password for root from 85.209.0.252 port 49888 ssh2 Oct 24 12:01:09 ubuntu sshd[7543]: Failed password for root from 141.98.10.213 port 35915 ssh2 Oct 24 12:01:26 ubuntu sshd[7547]: Failed password for invalid user 1234 from 141.</description>
     </item>
